@@ -10,13 +10,13 @@ void nextValue();
 void prevValue();
 void verifyCode();
 
-//uint8_t heart[5] = {
-//    0b00000000,
-//    0b00011000,
-//    0b00100100,
-//    0b01111110,
-//    0b00000000,
-//};
+// uint8_t heart[5] = {
+//     0b00000000,
+//     0b00011000,
+//     0b00100100,
+//     0b01111110,
+//     0b00000000,
+// };
 
 int time = 9;
 
@@ -86,16 +86,21 @@ int main() {
     //Habilita interrupcao para PD0..PD4
     PCMSK2 |= (1 << PCINT16) | (1 << PCINT17) | (1 << PCINT18) | (1 << PCINT19) | (1 << PCINT20);
 
+    //Habilita vetor de interrupcao para PD0...PD7
+    PCICR |= (1 << PCIE2);
+    //Habilita interrupcao para PD0..PD4
+    PCMSK2 |= (1 << PCINT16) | (1 << PCINT17) | (1 << PCINT18) | (1 << PCINT19) | (1 << PCINT20);
+
+    // Timer
     TCCR1B |= (1 << WGM12) | (1 << CS12) | (1 << CS10);
 
     OCR1AH = 15624 >> 8;
     OCR1AL = 15624 & 0x0f;
 
     TIMSK1 |= (1 << OCIE1A);
+    //
 
     sei();
-
-
 
     nokia_lcd_init();
     nokia_lcd_power(1);
@@ -150,3 +155,4 @@ void verifyCode() {
             leds[i] = 0;
         }
     }
+}
