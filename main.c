@@ -2,9 +2,11 @@
 #include "./nokia5110.h"
 #include <avr/io.h>
 #include <util/delay.h>
+#include <stdlib.h>
  
 void start();
 void sortSecret();
+void displayCode();
 void win();
 void lose();
 void nextDigit();
@@ -12,7 +14,9 @@ void nextValue();
 void prevValue();
 void verifyCode();
 
-int time = 30;
+int time;
+char stringTime[3];
+
 int isTimeRunning = 0;
 
 int randomParam = 0;
@@ -34,24 +38,29 @@ int currentDigit = 0;
 #define BOTAO5 PD4
 
 ISR(TIMER1_COMPA_vect) {
-    nokia_lcd_set_cursor(0, 0);
+    nokia_lcd_set_cursor(0, 20);
 
-    char buf[2] = " \0";
-    buf[0] = '0' + time;
-
-    nokia_lcd_write_string(buf, 1);
-    nokia_lcd_render();
-
+    if (time < 10) {
+        stringTime[0] = '0';    
+        stringTime[1] = '0' + time;
+    } else {
+        itoa(time, stringTime, 10);
+    }
+    stringTime[2] = '\0';
+    
     if (isTimeRunning) {
+        nokia_lcd_write_string(stringTime, 1);
+        displayCode();
+        nokia_lcd_render();
         time--;
-        if (time == 0) {
+        if (time == -1) {
             lose();
         }
     }
 }
 
 // Tratamento interrupcao PCINT2
-ISR(PCINT2_vect){
+ISR(PCINT2_vect) {
     if (!(PIND & (1 << BOTAO1))){   // lê PD0
         nextValue();
         while (!(PIND & (1 << BOTAO1))){
@@ -117,8 +126,6 @@ int main() {
     nokia_lcd_init();
     nokia_lcd_power(1);
     nokia_lcd_clear();
-    nokia_lcd_set_cursor(0, 12);
-    nokia_lcd_write_string("me mato ta", 2);
 
     while(1) {
         randomParam++;
@@ -131,6 +138,7 @@ void start() {
     sortSecret();
 
     // start timer
+    time = 60;
     isTimeRunning = 1;
 
     // clear code and leds list
@@ -139,8 +147,6 @@ void start() {
         leds[i] = 0;
     }
     currentDigit = 0;
-
-    // display stuf
 }
 
 void sortSecret() {
@@ -150,19 +156,60 @@ void sortSecret() {
     }
 }
 
+void displayCode() {
+    
+    // Render 4 digit code
+    nokia_lcd_set_cursor(0, 0);
+    char stringCode[8];
+    for (int i = 0; i < 4; i++) {
+        stringCode[i*2] = '0' + code[i]; // 0 2 4 6
+        stringCode[i*2+1] = ' ';   // 1 3 5 7
+    }
+    stringCode[7] = '\0';
+    nokia_lcd_write_string(stringCode, 1);
+
+    // Render secret (test)
+    nokia_lcd_set_cursor(0, 10);
+    char stringCode2[8];
+    for (int i = 0; i < 4; i++) {
+        stringCode2[i*2] = '0' + secret[i]; // 0 2 4 6
+        stringCode2[i*2+1] = ' ';   // 1 3 5 7
+    }
+    stringCode2[7] = '\0';
+    nokia_lcd_write_string(stringCode2, 1);
+
+    // Render digit position
+    // nokia_lcd_set_cursor(0, 10);
+    // char stringPosition[8];
+    // for (int i = 0; i < 4; i++) {
+    //     stringPosition[i] = ' ';
+    // }
+    // stringPosition[currentDigit*2] = '*';
+    // stringPosition[7] = '\0';
+    // nokia_lcd_write_string(stringPosition, 1);
+
+    nokia_lcd_render();
+}
+
 void win() {
     isTimeRunning = 0;
+    nokia_lcd_clear();
+    nokia_lcd_write_string("Acertou :)", 1);
+    nokia_lcd_render();
 }
 
 void lose() {
     isTimeRunning = 0;
+    nokia_lcd_clear();
+    nokia_lcd_write_string("Perdeu :(", 1);
+    nokia_lcd_render();
 }
 
 void nextDigit() {
     currentDigit++;
     if (currentDigit > 3) {
         currentDigit = 0;
-    }
+    };
 }
 
 void nextValue() {
@@ -190,6 +237,7 @@ void verifyCode() {
             leds[i] = 0;
         }
     }
+    PORTC |= (leds[0] << PC0) | (leds[1] << PC1) | (leds[2] << PC2) | (leds[3] << PC3);
     if (correctNumbers == 4) {
         win();
     }
