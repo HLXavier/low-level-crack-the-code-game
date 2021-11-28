@@ -2,23 +2,20 @@
 #include "./nokia5110.h"
 #include <avr/io.h>
 #include <util/delay.h>
-
+ 
 void start();
 void sortSecret();
+void win();
+void lose();
 void nextDigit();
 void nextValue();
 void prevValue();
 void verifyCode();
 
-// uint8_t heart[5] = {
-//     0b00000000,
-//     0b00011000,
-//     0b00100100,
-//     0b01111110,
-//     0b00000000,
-// };
+int time = 30;
+int isTimeRunning = 0;
 
-int time = 9;
+int randomParam = 0;
 
 // Sorted digits
 int secret[4];
@@ -29,7 +26,7 @@ int code[4];
 int leds[4];
 int currentDigit = 0;
 
-//Botoes
+// Botoes
 #define BOTAO1 PD0
 #define BOTAO2 PD1
 #define BOTAO3 PD2
@@ -45,29 +42,43 @@ ISR(TIMER1_COMPA_vect) {
     nokia_lcd_write_string(buf, 1);
     nokia_lcd_render();
 
-    time--;
+    if (isTimeRunning) {
+        time--;
+        if (time == 0) {
+            lose();
+        }
+    }
 }
 
-//Tratamento interrupcao PCINT2
+// Tratamento interrupcao PCINT2
 ISR(PCINT2_vect){
     if (!(PIND & (1 << BOTAO1))){   // lê PD0
-        nokia_lcd_write_string("botao 1!", 1);
-        //debounce
+        nextValue();
         while (!(PIND & (1 << BOTAO1))){
             _delay_ms(1);
         }
     }
     if (!(PIND & (1 << BOTAO2))){   // lê PD1
-        nokia_lcd_write_string("botao 2!", 1);
-        //debounce
+        prevValue();
         while (!(PIND & (1 << BOTAO2))){
             _delay_ms(1);
         }
     }
-    if (!(PIND & (1 << BOTAO3))){   // lê PD0
-        nokia_lcd_write_string("botao 3!", 1);
-        //debounce
-        while (!(PIND & (1 << BOTAO1))){
+    if (!(PIND & (1 << BOTAO3))){   // lê PD2
+        nextDigit();
+        while (!(PIND & (1 << BOTAO3))){
+            _delay_ms(1);
+        }
+    }
+    if (!(PIND & (1 << BOTAO4))){   // lê PD3
+        verifyCode();
+        while (!(PIND & (1 << BOTAO4))){
+            _delay_ms(1);
+        }
+    }
+    if (!(PIND & (1 << BOTAO5))){   // lê PD4
+        start();
+        while (!(PIND & (1 << BOTAO5))){
             _delay_ms(1);
         }
     }
@@ -86,10 +97,11 @@ int main() {
     //Habilita interrupcao para PD0..PD4
     PCMSK2 |= (1 << PCINT16) | (1 << PCINT17) | (1 << PCINT18) | (1 << PCINT19) | (1 << PCINT20);
 
-    //Habilita vetor de interrupcao para PD0...PD7
-    PCICR |= (1 << PCIE2);
-    //Habilita interrupcao para PD0..PD4
-    PCMSK2 |= (1 << PCINT16) | (1 << PCINT17) | (1 << PCINT18) | (1 << PCINT19) | (1 << PCINT20);
+    // Seta PC0..PC4 como saida (leds)
+    DDRC |= (1 << PC0) | (1 << PC1) | (1 << PC2) | (1 << PC3);
+    // Ligar os leds
+    PORTC |= (leds[0] << PC0) | (leds[1] << PC1) | (leds[2] << PC2) | (leds[3] << PC3);
+    
 
     // Timer
     TCCR1B |= (1 << WGM12) | (1 << CS12) | (1 << CS10);
@@ -108,21 +120,42 @@ int main() {
     nokia_lcd_set_cursor(0, 12);
     nokia_lcd_write_string("me mato ta", 2);
 
-    while(1) {}
+    while(1) {
+        randomParam++;
+    }
 
     return 0;
 }
 
 void start() {
     sortSecret();
+
     // start timer
+    isTimeRunning = 1;
+
     // clear code and leds list
+    for (int i = 0; i < 4; i++) {
+        code[i] = 0;
+        leds[i] = 0;
+    }
+    currentDigit = 0;
+
     // display stuf
 }
 
 void sortSecret() {
-    // sort 4 digit code (random library)
-    // store in "secrret" variable
+    srand(randomParam);
+    for (int i = 0; i < 4; i++) {
+        secret[i] = rand() % 10; // numero aleatorio de 0 a 9
+    }
+}
+
+void win() {
+    isTimeRunning = 0;
+}
+
+void lose() {
+    isTimeRunning = 0;
 }
 
 void nextDigit() {
@@ -147,12 +180,17 @@ void prevValue() {
 }
 
 void verifyCode() {
+    int correctNumbers = 0;
     for (int i = 0; i < 4; i++) {
         if (code[i] == secret[i]) {
             leds[i] = 1;
+            correctNumbers++;
         }
         else {
             leds[i] = 0;
         }
+    }
+    if (correctNumbers == 4) {
+        win();
     }
 }
