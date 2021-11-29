@@ -34,15 +34,16 @@ int secret[4];
 // Displayed digits
 int code[4];
 
-int leds[4];
+int greenLeds[4];
+int yellowLeds[4];
 int currentDigit = 0;
 
 // Botoes
-#define BOTAO1 PD0
-#define BOTAO2 PD1
-#define BOTAO3 PD2
-#define BOTAO4 PD3
-#define BOTAO5 PD4
+#define BOTAO1 PD3
+#define BOTAO2 PD4
+#define BOTAO3 PD5
+#define BOTAO4 PD6
+#define BOTAO5 PD7
 
 ISR(TIMER1_COMPA_vect) {
     if (isTimeRunning) {
@@ -56,35 +57,35 @@ ISR(TIMER1_COMPA_vect) {
 
 // Tratamento interrupcao PCINT2
 ISR(PCINT2_vect) {
-    if (!(PIND & (1 << BOTAO1))){   // lê PD0
+    if (!(PIND & (1 << BOTAO1))){   
         nextValue();
         render();
         while (!(PIND & (1 << BOTAO1))){
             _delay_ms(1);
         }
     }
-    if (!(PIND & (1 << BOTAO2))){   // lê PD1
+    if (!(PIND & (1 << BOTAO2))){   
         prevValue();
         render();
         while (!(PIND & (1 << BOTAO2))){
             _delay_ms(1);
         }
     }
-    if (!(PIND & (1 << BOTAO3))){   // lê PD2
+    if (!(PIND & (1 << BOTAO3))){
         nextDigit();
         render();
         while (!(PIND & (1 << BOTAO3))){
             _delay_ms(1);
         }
     }
-    if (!(PIND & (1 << BOTAO4))){   // lê PD3
+    if (!(PIND & (1 << BOTAO4))){   
         verifyCode();
         render();
         while (!(PIND & (1 << BOTAO4))){
             _delay_ms(1);
         }
     }
-    if (!(PIND & (1 << BOTAO5))){   // lê PD4
+    if (!(PIND & (1 << BOTAO5))){   
         start();
         while (!(PIND & (1 << BOTAO5))){
             _delay_ms(1);
@@ -96,17 +97,19 @@ ISR(PCINT2_vect) {
 
 int main() {
     // Botão: seta PD como entrada
-    DDRD &= ~((1 << PD0) | (1 << PD1) | (1 << PD2) | (1 << PD3) | (1 << PD4));
+    DDRD &= ~((1 << PD3) | (1 << PD4) | (1 << PD5) | (1 << PD6) | (1 << PD7));
     //Ativa pull-up da PD
-    PORTD |= ((1 << PD0) | (1 << PD1) | (1 << PD2) | (1 << PD3) | (1 << PD4)); 
+    PORTD |= ((1 << PD3) | (1 << PD4) | (1 << PD5) | (1 << PD6) | (1 << PD7)); 
 
     //Habilita vetor de interrupcao para PD0...PD7
-    PCICR |= (1 << PCIE2);
+    PCICR |= (1 << PCIE2) | (1 << PCIE1);
     //Habilita interrupcao para PD0..PD4
-    PCMSK2 |= (1 << PCINT16) | (1 << PCINT17) | (1 << PCINT18) | (1 << PCINT19) | (1 << PCINT20);
+    PCMSK2 |= (1 << PCINT19) | (1 << PCINT20) | (1 << PCINT21) | (1 << PCINT22) | (1 << PCINT23);
 
-    // Seta PC0..PC4 como saida (leds)
-    DDRC |= (1 << PC0) | (1 << PC1) | (1 << PC2) | (1 << PC3);
+    //Seta PD0, PD1 e PD2 como saida (yellowLeds)
+    DDRD |= (1 << PD0) | (1 << PD1) | (1 << PD2);
+    // Seta PC0..PC4 e PC6 como saida (greenLeds)
+    DDRC |= (1 << PC0) | (1 << PC1) | (1 << PC2) | (1 << PC3) | (1 << PC6);
 
     // Timer
     TCCR1B |= (1 << WGM12) | (1 << CS12) | (1 << CS10);
@@ -137,12 +140,12 @@ void start() {
     time = 10;
     isTimeRunning = 1;
 
-    // clear code and leds list
+    // clear code and greenLeds list
     lives = 10;
     for (int i = 0; i < 4; i++) {
         code[i] = 0;
-        leds[i] = 0;
     }
+    clearLeds();
     currentDigit = 0;
 }
 
@@ -194,10 +197,18 @@ void verifyCode() {
     clearLeds();
     for (int i = 0; i < 4; i++) {
         if (code[i] == secret[i]) {
-            leds[i] = 1;
+            greenLeds[i] = 1;
             correctNumbers++;
         }
     }
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            if (code[i] == secret[j]) {
+                yellowLeds[i] = 1;
+            }
+        }
+    }
+
     if (correctNumbers == 4) {
         win();
     } else {
@@ -207,13 +218,17 @@ void verifyCode() {
         }
         time = 30;
     }
-    PORTC |= (leds[0] << PC0) | (leds[1] << PC1) | (leds[2] << PC2) | (leds[3] << PC3);
+    PORTC |= (greenLeds[0] << PC0) | (greenLeds[1] << PC1) | (greenLeds[2] << PC2) | (greenLeds[3] << PC3) | (yellowLeds[0] << PC6);
+    PORTD |= (yellowLeds[1] << PD0) | (yellowLeds[2] << PD1) | (yellowLeds[3] << PD2);
 }
 
 void clearLeds() {
     for (int i = 0; i < 4; i++){
-        leds[i] = 0;
+        greenLeds[i] = 0;
+        yellowLeds[i] = 0;
     }
+    PORTC &= ~((1 << PC0) | (1 << PC1) | (1 << PC2) | (1 << PC3) | (1 << PC6));
+    PORTD &= ~((1 << PD0) | (1 << PD1) | (1 << PD2));
 }
 
 void blinkLeds() {
