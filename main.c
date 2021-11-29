@@ -28,7 +28,7 @@ int isTimeRunning = 0;
 int lives;
 char stringLives[3];
 
-unsigned int randomParam = 0;
+volatile unsigned int randomParam = 0;
 
 // Sorted digits
 int secret[4];
@@ -82,12 +82,13 @@ ISR(PCINT2_vect) {
     }
     if (!(PIND & (1 << BOTAO4))) {   
         verifyCode();
-        render();
+        renderLives();
+        nokia_lcd_render();
         while (!(PIND & (1 << BOTAO4))){
             _delay_ms(1);
         }
     }
-    if (!(PIND & (1 << BOTAO5))) {   
+    if (!(PIND & (1 << BOTAO5))) {  
         start();
         while (!(PIND & (1 << BOTAO5))){
             _delay_ms(1);
@@ -260,15 +261,13 @@ void blinkLeds() {
 }
 
 void render() {
-    if (isTimeRunning) {
-        nokia_lcd_clear();
+    nokia_lcd_clear();
 
-        renderCode();
-        renderTime();
-        renderLives();
+    renderCode();
+    renderTime();
+    renderLives();
 
-        nokia_lcd_render();
-    }
+    nokia_lcd_render();
 }
 
 void renderCode() {
