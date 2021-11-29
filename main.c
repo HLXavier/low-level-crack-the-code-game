@@ -12,6 +12,8 @@ void nextDigit();
 void nextValue();
 void prevValue();
 void verifyCode();
+void clearLeds();
+void blinkLeds();
 void render();
 void renderCode();
 void renderTime();
@@ -105,9 +107,6 @@ int main() {
 
     // Seta PC0..PC4 como saida (leds)
     DDRC |= (1 << PC0) | (1 << PC1) | (1 << PC2) | (1 << PC3);
-    // Ligar os leds
-    PORTC |= (leds[0] << PC0) | (leds[1] << PC1) | (leds[2] << PC2) | (leds[3] << PC3);
-    
 
     // Timer
     TCCR1B |= (1 << WGM12) | (1 << CS12) | (1 << CS10);
@@ -191,13 +190,12 @@ void prevValue() {
 
 void verifyCode() {
     int correctNumbers = 0;
+
+    clearLeds();
     for (int i = 0; i < 4; i++) {
         if (code[i] == secret[i]) {
             leds[i] = 1;
             correctNumbers++;
-        }
-        else {
-            leds[i] = 0;
         }
     }
     if (correctNumbers == 4) {
@@ -209,6 +207,17 @@ void verifyCode() {
         }
         time = 30;
     }
+    PORTC |= (leds[0] << PC0) | (leds[1] << PC1) | (leds[2] << PC2) | (leds[3] << PC3);
+}
+
+void clearLeds() {
+    for (int i = 0; i < 4; i++){
+        leds[i] = 0;
+    }
+}
+
+void blinkLeds() {
+    
 }
 
 void render() {
