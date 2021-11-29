@@ -137,7 +137,7 @@ void start() {
     sortSecret();
 
     // start timer
-    time = 10;
+    time = 30;
     isTimeRunning = 1;
 
     // clear code and greenLeds list
@@ -164,6 +164,8 @@ void win() {
 
     clearLeds();
     blinkLeds();
+
+    start();
 }
 
 void lose() {
@@ -173,6 +175,9 @@ void lose() {
     nokia_lcd_render();
 
     clearLeds();
+
+    _delay_ms(3000);
+    start();
 }
 
 void nextDigit() {
