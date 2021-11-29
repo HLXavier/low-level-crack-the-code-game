@@ -161,6 +161,9 @@ void win() {
     nokia_lcd_clear();
     nokia_lcd_write_string("Acertou :)", 1);
     nokia_lcd_render();
+
+    clearLeds();
+    blinkLeds();
 }
 
 void lose() {
@@ -168,6 +171,8 @@ void lose() {
     nokia_lcd_clear();
     nokia_lcd_write_string("Perdeu :(", 1);
     nokia_lcd_render();
+
+    clearLeds();
 }
 
 void nextDigit() {
@@ -232,7 +237,17 @@ void clearLeds() {
 }
 
 void blinkLeds() {
-    
+    //piscar todos os leds 3x
+    for (int i = 0; i < 3; i++){
+        //acende todos os leds
+        PORTC |= ((1 << PC0) | (1 << PC1) | (1 << PC2) | (1 << PC3) | (1 << PC6));
+        PORTD |= ((1 << PD0) | (1 << PD1) | (1 << PD2));
+        _delay_ms(500);
+        //desliga todos os leds
+        PORTC &= ~((1 << PC0) | (1 << PC1) | (1 << PC2) | (1 << PC3) | (1 << PC6));
+        PORTD &= ~((1 << PD0) | (1 << PD1) | (1 << PD2));
+        _delay_ms(500);
+    }
 }
 
 void render() {
