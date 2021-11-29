@@ -3,6 +3,8 @@
 #include <avr/io.h>
 #include <util/delay.h>
 #include <stdlib.h>
+#include "./print.h"
+#include "./uart.h"
  
 void start();
 void sortSecret();
@@ -26,7 +28,7 @@ int isTimeRunning = 0;
 int lives;
 char stringLives[3];
 
-int randomParam = 0;
+unsigned int randomParam = 0;
 
 // Sorted digits
 int secret[4];
@@ -57,35 +59,35 @@ ISR(TIMER1_COMPA_vect) {
 
 // Tratamento interrupcao PCINT2
 ISR(PCINT2_vect) {
-    if (!(PIND & (1 << BOTAO1))){   
+    if (!(PIND & (1 << BOTAO1))) {   
         nextValue();
         render();
-        while (!(PIND & (1 << BOTAO1))){
+        while (!(PIND & (1 << BOTAO1))) {
             _delay_ms(1);
         }
     }
-    if (!(PIND & (1 << BOTAO2))){   
+    if (!(PIND & (1 << BOTAO2))) {   
         prevValue();
         render();
         while (!(PIND & (1 << BOTAO2))){
             _delay_ms(1);
         }
     }
-    if (!(PIND & (1 << BOTAO3))){
+    if (!(PIND & (1 << BOTAO3))) {
         nextDigit();
         render();
         while (!(PIND & (1 << BOTAO3))){
             _delay_ms(1);
         }
     }
-    if (!(PIND & (1 << BOTAO4))){   
+    if (!(PIND & (1 << BOTAO4))) {   
         verifyCode();
         render();
         while (!(PIND & (1 << BOTAO4))){
             _delay_ms(1);
         }
     }
-    if (!(PIND & (1 << BOTAO5))){   
+    if (!(PIND & (1 << BOTAO5))) {   
         start();
         while (!(PIND & (1 << BOTAO5))){
             _delay_ms(1);
@@ -96,6 +98,8 @@ ISR(PCINT2_vect) {
 
 
 int main() {
+    uart_init(57600, 0);
+
     // Botão: seta PD como entrada
     DDRD &= ~((1 << PD3) | (1 << PD4) | (1 << PD5) | (1 << PD6) | (1 << PD7));
     //Ativa pull-up da PD
@@ -271,7 +275,7 @@ void renderCode() {
     
     // Render 4 digit code
     nokia_lcd_set_cursor(0, 0);
-    char stringCode[8];
+    char stringCode[8] = {' ',' ',' ',' ',' ',' ',' ',' '};
     for (int i = 0; i < 4; i++) {
         stringCode[i*2] = '0' + code[i]; // 0 2 4 6
         stringCode[i*2+1] = ' ';   // 1 3 5 7
@@ -281,7 +285,7 @@ void renderCode() {
 
     // Render digit position
     nokia_lcd_set_cursor(0, 10);
-    char stringPosition[8];
+    char stringPosition[8] = {' ',' ',' ',' ',' ',' ',' ',' '};
     for (int i = 0; i < 4; i++) {
         stringPosition[i] = ' ';
     }
