@@ -156,9 +156,21 @@ void start() {
 
 void sortSecret() {
     srand(randomParam);
+    int usedDigits[10] = {0,0,0,0,0,0,0,0,0,0};
+
+    int sortedDigit = rand() % 10;
     for (int i = 0; i < 4; i++) {
-        secret[i] = rand() % 10; // numero aleatorio de 0 a 9
+        while (usedDigits[sortedDigit] == 1) {
+            sortedDigit = rand() % 10;
+        }
+        secret[i] = sortedDigit;
+        usedDigits[sortedDigit] = 1;
     }
+    printint(secret[0]);
+    printint(secret[1]);
+    printint(secret[2]);
+    printint(secret[3]);
+    print("\n");
 }
 
 void win() {
@@ -208,19 +220,43 @@ void prevValue() {
 
 void verifyCode() {
     int correctNumbers = 0;
+    int containedNumbers = 0;
+
+    int checkedSecret[4] = {0,0,0,0};
+    int checkedCode[4] = {0,0,0,0};
 
     clearLeds();
+    // Correct numbers
     for (int i = 0; i < 4; i++) {
         if (code[i] == secret[i]) {
-            greenLeds[i] = 1;
             correctNumbers++;
+            checkedSecret[i] = 1;
+            checkedCode[i] = 1;
         }
     }
+
+    // Contained numbers
     for (int i = 0; i < 4; i++) {
+        if (checkedSecret[i] == 1) continue;
         for (int j = 0; j < 4; j++) {
-            if (code[i] == secret[j]) {
-                yellowLeds[i] = 1;
+            if (checkedCode[j] == 1) continue;
+            if (code[j] == secret[i]) {
+                containedNumbers++;
             }
+        }
+    }
+
+    // Green leds
+    for (int i = 0; i < 4; i++) {
+        if (correctNumbers >= i + 1) {
+            greenLeds[i] = 1;
+        }
+    }
+
+    // Yellow leds
+    for (int i = 0; i < 4; i++) {
+        if (containedNumbers >= i + 1) {
+            yellowLeds[i] = 1;
         }
     }
 
@@ -233,6 +269,7 @@ void verifyCode() {
         }
         time = 30;
     }
+
     PORTC |= (greenLeds[0] << PC0) | (greenLeds[1] << PC1) | (greenLeds[2] << PC2) | (greenLeds[3] << PC3) | (yellowLeds[0] << PC6);
     PORTD |= (yellowLeds[1] << PD0) | (yellowLeds[2] << PD1) | (yellowLeds[3] << PD2);
 }
