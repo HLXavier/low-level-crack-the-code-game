@@ -31,7 +31,7 @@ char stringLives[3];
 volatile unsigned int randomParam = 0;
 
 // Sorted digits
-int secret[4] = {3,1,0,0};
+int secret[4];
 
 // Displayed digits
 int code[4];
@@ -139,7 +139,7 @@ int main() {
 }
 
 void start() {
-    //sortSecret();
+    sortSecret();
 
     // start timer
     time = 30;
@@ -219,10 +219,6 @@ void prevValue() {
 }
 
 void verifyCode() {
-    // Ligar os leds
-    PORTC |= ( (greenLeds[0] << PC0) | (greenLeds[1] << PC1) | (greenLeds[2] << PC2) | (greenLeds[3] << PC3) | (yellowLeds[0] << PC6) );
-    PORTD |= ( (yellowLeds[1] << PD0) | (yellowLeds[2] << PD1) | (yellowLeds[3] << PD2) );
-    
     int correctNumbers = 0;
     int containedNumbers = 0;
 
